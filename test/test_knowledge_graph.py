@@ -30,7 +30,6 @@ class TestKnowledgeGraph(unittest.TestCase):
 
     def test_deep_graph(self):
         input_documents = ["here's a big old sentence for you to split up lol"]
-        print("FNORD 2")
         graph = kg.KnowledgeGraph(input_documents, chunk_length=9, chunk_overlap=2, max_subtopics=5)
         #graph.print()
         

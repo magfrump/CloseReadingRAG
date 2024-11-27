@@ -150,14 +150,14 @@ class RagNodes():
                 scored_list_insert((relevance["relevance"], current_node),
                                    text_nodes)
             else:
-                print(current_node.get_text)
+                # print(current_node.get_text)
                 children = current_node.get_children()
                 scored_children = []
                 for child in children:
                     relevance = \
                         self._prompt_dict["text_relevance"].invoke( \
                             {"question":question, "text": child.node_summary})
-                    print(child.node_reference, " has relevance ", relevance)
+                    #print(child.node_reference, " has relevance ", relevance)
                     scored_list_insert( \
                         (relevance["relevance"], child.node_reference), \
                             scored_children)
@@ -173,9 +173,9 @@ class RagNodes():
             if len(text_nodes) > max_memory_nodes:
                 text_nodes = text_nodes[:max_memory_nodes]
         documents = [_[1].get_text for _ in text_nodes]
-        print(len(documents))
-        for d in documents:
-            print(d, "\n\n")
+        #print(len(documents))
+        #for d in documents:
+        #    print(d, "\n\n")
         return {"documents": documents, "question": question}
 
     def generate(self, state):
