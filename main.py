@@ -7,15 +7,12 @@ Created on Thu Sep 19 13:46:47 2024
 """
 
 import os
-import logging
 import time
 
 from langchain_community.chat_models import ChatOllama
-from langchain_core.prompts import PromptTemplate
 from langgraph.graph import END, StateGraph, START
 from langchain_core.runnables.config import RunnableConfig
 
-from prompt_definitions import PromptCreator
 import node_definitions as nodedef
 
 if __name__ == '__main__':
@@ -26,9 +23,9 @@ if __name__ == '__main__':
     local_llm = "Kale"
     llm = ChatOllama(model=local_llm, format="json", temperature = 0)
     print("Established llm at time ",time.time()-t0)
-    
+
     nodes = nodedef.RagNodes("data/belegarth_kg.json", llm)
-    
+
     ## Add nodes to workflow
     workflow = StateGraph(nodedef.GraphState)
 
@@ -39,10 +36,10 @@ if __name__ == '__main__':
     workflow.add_node("generate", nodes.generate)  # generate
     # workflow.add_node("improve_question", nodes.improve_question)
     print("Created graph nodes at time ",time.time()-t0)
-    
+
     # Add graph edges
     #workflow.add_edge(START, "improve_question")
-    
+
     #workflow.add_conditional_edges(
     #    START,
     #    nodes.route_question,
@@ -51,9 +48,9 @@ if __name__ == '__main__':
     #        "vectorstore": "retrieve",
     #    },
     #)
-    
+
     workflow.add_edge(START, "retrieve")
-    
+
     workflow.add_edge("retrieve", "grade_documents")
     workflow.add_edge("grade_documents", "generate")
     #workflow.add_conditional_edges(
@@ -88,5 +85,3 @@ if __name__ == '__main__':
             print(f"Finished running: {key}:")
             # print(f"With result: {value}:")
     print(value["generation"])
-    
-    

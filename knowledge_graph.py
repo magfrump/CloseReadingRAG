@@ -8,12 +8,10 @@ Created on Fri Oct  4 14:06:13 2024
 
 from math import ceil
 import json
-import os
 import time
-import indexed_info_node as iin
 from langchain_community.chat_models import ChatOllama
 from langchain_core.prompts import PromptTemplate
-from langchain_core.output_parsers import JsonOutputParser
+import indexed_info_node as iin
 
 def _split_document(document, chunk_length, chunk_overlap):
     chunks = []
@@ -48,13 +46,13 @@ class KnowledgeGraph:
         self.max_subtopics = max_subtopics
         self.subtopics = []
         self.text = ""
-        self.source = ""
+        self.source = source
         self.llm = ChatOllama(model="Kale", temperature=0, \
                               num_predict = int(self.chunk_length/self.max_subtopics))
         self._process_input_documents(input_documents, chunk_length, \
                                       chunk_overlap, max_subtopics)
         self.add_descriptions()
-        
+
     @classmethod
     def from_file(cls, input_directory):
         params = {}
@@ -63,15 +61,12 @@ class KnowledgeGraph:
                 params = json.loads(f.read())
         except:
             raise FileNotFoundError("Could not find metadata file for knowledge graph")
-        
-            return cls()
         chunk_length = params["chunk_length"]
         chunk_overlap = params["chunk_overlap"]
         max_subtopics = params["max_subtopics"]
         root_node_name = input_directory+"/"+params["root_node"]+"_kg.txt"
-        self.text = params["text"]
-        
-        
+        return cls(chunk_length, chunk_overlap, max_subtopics, root_node_name, params["text"])
+
     def _process_input_documents(self, input_documents, chunk_length, chunk_overlap, max_subtopics):
         if len(input_documents)==1:
             #print("Single document")
@@ -85,7 +80,10 @@ class KnowledgeGraph:
                 chunks = _split_document(doc, chunk_length, chunk_overlap)
                 #print("text of length ", len(doc), "split into ", len(chunks), " chunks")
                 #print(chunks)
-                self.subtopics.append(KnowledgeGraph(chunks, chunk_length, chunk_overlap, max_subtopics))
+                self.subtopics.append(KnowledgeGraph(chunks,
+                                                     chunk_length,
+                                                     chunk_overlap,
+                                                     max_subtopics))
                 return
             #print("medium text ", len(doc))
             chunks = _split_document(doc, chunk_length, chunk_overlap)
@@ -93,7 +91,7 @@ class KnowledgeGraph:
                                                  chunk_overlap, \
                                                  max_subtopics) for _ in chunks])
             return
-            
+
         if len(input_documents) > max_subtopics:
             #print("many documents ",len(input_documents))
             docs_per_subtopic = ceil(len(input_documents)/max_subtopics)
@@ -104,12 +102,12 @@ class KnowledgeGraph:
                                     input_documents[i:i+docs_per_subtopic], \
                                     chunk_length, chunk_overlap, max_subtopics))
             return
-        
+
         #print("few documents")
         for doc in input_documents:
             self.subtopics.append(KnowledgeGraph([doc], chunk_length, \
                                                  chunk_overlap, max_subtopics))
-                
+
     def add_descriptions(self):
         sub_summary_length = int(self.chunk_length/self.max_subtopics)
         if len(self.text) > 0:
@@ -127,7 +125,7 @@ class KnowledgeGraph:
                                          updated=time.time(), \
                                          source=self.source, \
                                          node_type=node_type)
-        
+
         # If no subtopics, write a single text node
         if self.subtopics:
             for i in range(len(self.subtopics)):
@@ -149,8 +147,6 @@ class KnowledgeGraph:
             node = iin.IndexedInfoNode(node_children, node_metadata, self.text)
         if node:
             node.write_to_file(directory+"/"+prefix+"_kg.json")
-            
-            
 
     @property
     def num_subtopics(self):
@@ -160,10 +156,10 @@ class KnowledgeGraph:
         if index < 0 or index >= self.num_subtopics:
             raise IndexError("Index out of range")
         return self.subtopics[index]
-    
+
     def get_text(self):
-        return self.text        
-    
+        return self.text
+
     def print(self):
         print(self.text)
         for subtopic in self.subtopics:
