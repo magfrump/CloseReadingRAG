@@ -287,7 +287,8 @@ class RagNodes():
 
         # TODO(magfrump): iterate over new_sources
         # TODO(magfrump): implement adding sources to index
-        # TODO(magfrump): remove new sources text from memory (we want to retrieve only relevant subsections)
+        # TODO(magfrump): remove new sources text from memory
+        #                 (we want to retrieve only relevant subsections)
         return state
 
     def next_note(self, state):
@@ -342,7 +343,7 @@ class RagNodes():
         if len(state["responses"]) < self._num_personas:
             return "increment_persona"
         num_ratings = len(state["responses"][0]["response_ratings"])
-        if num_ratings > 0 and num_ratings < self._num_personas:
+        if 0 < num_ratings < self._num_personas:
             return "increment_persona"
         return "move_on"
 
