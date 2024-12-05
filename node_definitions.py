@@ -107,7 +107,7 @@ class RagNodes():
         This class is designed to be used in conjunction with a PromptCreator
             instance, which provides pre-defined prompts for each node.
     """
-    def __init__(self, doc_index_root, llm):
+    def __init__(self, doc_index_root, llm, num_personas = 5):
         ## Create prompts
         prompt_name_list = ["retrieval_grader", "rag_generate",
                           "hallucination_grader", "answer_grader",
@@ -120,6 +120,8 @@ class RagNodes():
             self._prompt_dict[prompt_name] = prompt_text | llm | \
                     JsonOutputParser()
         self._index_root = doc_index_root
+        # Not yet implemented
+        self._num_personas = num_personas
 
     def retrieve(self, state):
         """
@@ -252,7 +254,7 @@ class RagNodes():
             state (dict): The current graph state
     
         Returns:
-            state (dict): Appended web results to documents
+            state (dict): Appended web results to new_sources
         """
 
         print("---WEB SEARCH---")
@@ -270,6 +272,80 @@ class RagNodes():
         else:
             documents = [web_results]
         return {"documents": documents, "question": question}
+
+    def index_info(self, state):
+        """
+        After web search retrieval, recursively splits and summarizes documents
+        into the class document index.
+
+        Args:
+            state (dict): The current graph state
+
+        Returns:
+            state (dict): new_sources removed from state
+        """
+
+        # TODO(magfrump): iterate over new_sources
+        # TODO(magfrump): implement adding sources to index
+        # TODO(magfrump): remove new sources text from memory
+        #                 (we want to retrieve only relevant subsections)
+        return state
+
+    def next_note(self, state):
+        """
+        Increment the persona index to generate using the next persona.
+
+        Args:
+            state (dict): The current graph state
+
+        Returns:
+            state (dict): The current graph state with persona_index incremented or reset
+        """
+        state["persona_index"] = (state["persona_index"]+1)%self._num_personas
+        return state
+
+    def rate_notes(self, state):
+        """
+        Uses the current persona to add a rating to each note
+
+        Args:
+            state (dict): The current graph state
+
+        Returns:
+            state (dict): The current graph state with a new rating on each note
+        """
+
+        return state
+
+    def pick_winner(self, state):
+        """
+        Assesses the ratings of each note across personas to pick the best note
+
+        Args:
+            state (dict): The current graph state
+
+        Returns:
+            state (dict): The content of the winning note filled in
+        """
+        return state
+
+    ### Conditional edge
+    def increment_persona_or_move_on(self, state):
+        """
+        Checks whether more personas remain to generate for.
+
+        Args:
+            state (dict): The current graph state
+
+        Returns:
+            str: Whether to move on or not
+        """
+        if len(state["responses"]) < self._num_personas:
+            return "increment_persona"
+        num_ratings = len(state["responses"][0]["response_ratings"])
+        if 0 < num_ratings < self._num_personas:
+            return "increment_persona"
+        return "move_on"
 
     ### Conditional edge
     def route_question(self, state):
