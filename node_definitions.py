@@ -238,7 +238,6 @@ class RagNodes():
 
         # Score each doc
         filtered_docs = []
-        web_search = "No"
         for d in documents:
             score = self._prompt_dict["retrieval_grader"].invoke(
                 {"persona":self._persona_list[state["persona_index"]],
