@@ -80,7 +80,7 @@ if __name__ == '__main__':
               target areas?
               """
               }
-    config = RunnableConfig(recursion_limit=10)
+    config = RunnableConfig(recursion_limit=20)
     for output in app.stream(inputs, config):
         for key, value in output.items():
             print(f"Finished running: {key}:")

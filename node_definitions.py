@@ -112,7 +112,7 @@ class RagNodes():
         This class is designed to be used in conjunction with a PromptCreator
             instance, which provides pre-defined prompts for each node.
     """
-    def __init__(self, doc_index_root, llm, num_personas = 1):
+    def __init__(self, doc_index_root, llm, num_personas = 2):
         ## Create prompts
         prompt_name_list = ["retrieval_grader", "rag_generate",
                           "hallucination_grader", "answer_grader",
@@ -143,8 +143,6 @@ class RagNodes():
         question = state["original_claim"]
         if "persona_index" not in state:
             state["persona_index"]=0
-        else:
-            state["persona_index"]+=1
         response = Response()
 
         # Retrieval
@@ -329,6 +327,7 @@ class RagNodes():
         Returns:
             state (dict): The current graph state with a new rating on each note
         """
+        print("---RATING NOTES---")
         for note in state["responses"]:
             if "response_ratings" not in note:
                 note["response_ratings"] = []
@@ -338,6 +337,7 @@ class RagNodes():
                                                        #"references": note["response_sources"],
                                                        "generation": note["response_content"]})
             note["response_ratings"].append(rating["score"])
+        state["persona_index"] = (state["persona_index"]+1)%self._num_personas
         return state
 
     def pick_winner(self, state):
