@@ -76,8 +76,7 @@ if __name__ == '__main__':
 
     app = workflow.compile()
     inputs = {"original_claim": """
-              In Belegarth, where is the boundary between the body and arm
-              target areas?
+              In Belegarth, what is the most effective weapon set?
               """
               }
     config = RunnableConfig(recursion_limit=20)

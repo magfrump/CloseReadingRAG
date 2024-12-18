@@ -41,6 +41,7 @@ urls = [
 ]
 t0 = time.time()
 docs = [WebBaseLoader(url).load() for url in urls]
+print(docs)
 print("Loaded web page at time: ", time.time()-t0)
 docs_list = [item for sublist in docs for item in sublist]
 

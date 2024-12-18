@@ -9,9 +9,11 @@ Created on Mon Sep 23 15:19:48 2024
 from pprint import pprint
 from typing import List
 
+from googlesearch import search
 from langchain_core.output_parsers import JsonOutputParser
 from typing_extensions import TypedDict
 from prompt_definitions import PromptCreator
+from generate_personas import generate_personas
 import indexed_info_node as iin
 
 def scored_list_insert(scored_entry, ordered_list):
@@ -36,16 +38,6 @@ def scored_list_insert(scored_entry, ordered_list):
         index_score = ordered_list[index][0]
     ordered_list.insert(index, scored_entry)
     return
-
-def generate_personas(num_personas):
-    persona_list = ["an expert in the current subject matter",
-             "an educated layperson unfamiliar with the current subject matter",
-             "a nitpicking nerd interested as a hobby",
-             "a child learning eagerly for the first time"]
-    if num_personas > len(persona_list):
-        print("Too many personas requested, looping.")
-        persona_list = persona_list*(num_personas/len(persona_list) + 1)
-    return persona_list[:num_personas]
     
 ### State
 
@@ -429,11 +421,15 @@ class RagNodes():
         documents = response["response_sources"]
         generation = response["response_content"]
 
-        score = self._prompt_dict["hallucination_grader"].invoke(
-            {"persona":self._persona_list[state["persona_index"]],
-             "documents": documents, "generation": generation}
-        )
-        grade = score["score"]
+        if len(documents)!=0:
+            score = self._prompt_dict["hallucination_grader"].invoke(
+                {"persona":self._persona_list[state["persona_index"]],
+                "documents": documents, "generation": generation}
+            )
+            grade = score["score"]
+        else:
+            # if no relevant documents could be found, allow giving an opinion
+            grade = "yes"
 
         # Check hallucination
         if grade == "yes":
