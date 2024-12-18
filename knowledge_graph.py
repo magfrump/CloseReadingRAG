@@ -20,7 +20,7 @@ def _split_document(document, chunk_length, chunk_overlap):
         chunks.append(chunk)
     return chunks
 
-def _summarize(document, summary_size, llm):
+def _summarize(document, llm):
     summary_prompt = PromptTemplate(
         template="""<|begin_of_text|><|start_header_id|>system<|end_header_id|>
         You are an expert at organizing text. You are indexing a section of
@@ -40,13 +40,13 @@ def _summarize(document, summary_size, llm):
 
 class KnowledgeGraph:
     def __init__(self, input_documents, chunk_length, chunk_overlap, \
-                 max_subtopics, source = ""):
+                 max_subtopics = 10, source = ""):
         self.chunk_length = chunk_length
         self.chunk_overlap = chunk_overlap
         self.max_subtopics = max_subtopics
         self.subtopics = []
         self.text = ""
-        self.source = source
+        self.source = str(source)
         self.llm = ChatOllama(model="Kale", temperature=0, \
                               num_predict = int(self.chunk_length/self.max_subtopics))
         self._process_input_documents(input_documents, chunk_length, \
@@ -55,19 +55,24 @@ class KnowledgeGraph:
 
     @classmethod
     def from_file(cls, input_directory):
+        """
+        Reads a knowledge graph starting from metadata stored in "kg_meta.json"
+        in the specified directory.
+        """
         params = {}
-        try:
-            with open(input_directory+"kg_meta.json") as f:
-                params = json.loads(f.read())
-        except:
-            raise FileNotFoundError("Could not find metadata file for knowledge graph")
+        with open(input_directory+"kg_meta.json") as f:
+            params = json.loads(f.read())
         chunk_length = params["chunk_length"]
         chunk_overlap = params["chunk_overlap"]
         max_subtopics = params["max_subtopics"]
         root_node_name = input_directory+"/"+params["root_node"]+"_kg.txt"
         return cls(chunk_length, chunk_overlap, max_subtopics, root_node_name, params["text"])
 
-    def _process_input_documents(self, input_documents, chunk_length, chunk_overlap, max_subtopics):
+    def _process_input_documents(self, input_documents, chunk_length,
+                                  chunk_overlap, max_subtopics):
+        """
+        Splits a list of documents into a tree of chunks.
+        """
         if len(input_documents)==1:
             #print("Single document")
             doc = input_documents[0]
@@ -109,15 +114,25 @@ class KnowledgeGraph:
                                                  chunk_overlap, max_subtopics))
 
     def add_descriptions(self):
-        sub_summary_length = int(self.chunk_length/self.max_subtopics)
+        """
+        Uses LLM to add a summary description of this node.
+        """
         if len(self.text) > 0:
             return self.get_text()
         for subtopic in self.subtopics:
-            self.text += _summarize(subtopic.add_descriptions(), sub_summary_length, self.llm)
+            self.text += _summarize(subtopic.add_descriptions(), self.llm)
             self.text += "\nAND\n"
         return self.get_text()
 
     def write_doc_to_dir(self, directory, prefix="", node_type="DOCUMENT"):
+        """
+        Writes a node to file in the given directory, writing all
+        descendents of that node to separate files with numerical
+        suffixes.
+
+        Warning: if max_subtopics > 10, numerical suffixes could collide
+        causing undefined behavior.
+        """
         # writes as indexed_info_node
         node = None
         node_children = []
@@ -132,8 +147,7 @@ class KnowledgeGraph:
                 subtopic = self.subtopics[i]
                 node_children.append( iin.ChildNode(
                     node_reference= directory+"/"+prefix+str(i)+"_kg.json", \
-                    node_summary= _summarize(subtopic.get_text(), \
-                                int(self.chunk_length/self.max_subtopics), self.llm)))
+                    node_summary= _summarize(subtopic.get_text(), self.llm)))
                 self.subtopics[i].write_doc_to_dir(directory, \
                                                    prefix=prefix+str(i), \
                                                    node_type="DOCUMENT_SECTION")

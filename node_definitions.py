@@ -9,7 +9,6 @@ Created on Mon Sep 23 15:19:48 2024
 from pprint import pprint
 from typing import List
 
-from googlesearch import search
 from langchain_core.output_parsers import JsonOutputParser
 from typing_extensions import TypedDict
 from prompt_definitions import PromptCreator
