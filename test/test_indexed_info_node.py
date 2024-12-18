@@ -6,11 +6,11 @@ Created on Tue Oct  8 13:13:49 2024
 @author: magfrump
 """
 
+import json
 import unittest
 import indexed_info_node as iin
-import json
 
-class TextInfoNode(unittest.TestCase):
+class TestInfoNode(unittest.TestCase):
     def test_write_to_file(self):
         filename = "test.json"
         children = [iin.ChildNode("child1","This is a child node")]

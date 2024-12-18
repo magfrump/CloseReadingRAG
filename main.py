@@ -18,8 +18,7 @@ if __name__ == '__main__':
     # set global variables. USER_AGENT identifies the process to html requests.
     os.environ["USER_AGENT"] = "FnordFiddler"
     # local llm sets the local llm profile to call using ollama
-    local_llm = "Kale"
-    llm = ChatOllama(model=local_llm, format="json", temperature = 0)
+    llm = ChatOllama(model="Kale", format="json", temperature = 0)
 
     nodes = nodedef.RagNodes("data/belegarth_kg.json", llm)
 
