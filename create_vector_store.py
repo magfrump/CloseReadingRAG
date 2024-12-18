@@ -45,7 +45,7 @@ print("Loaded web page at time: ", time.time()-t0)
 docs_list = [item for sublist in docs for item in sublist]
 
 parsed_docs = [kg.KnowledgeGraph([docs_list[i].page_content],
-                                 400, 20, 10, urls[i])
+                                 800, 20, 10, urls[i])
                for i in range(len(docs_list))]
 print("\n\nParsed docs at time: ", time.time()-t0)
 
