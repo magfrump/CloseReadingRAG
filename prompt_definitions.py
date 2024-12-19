@@ -18,24 +18,23 @@ class PromptCreator:
     def __init__(self):
         retrieval_grader_prompt = PromptTemplate(
             template="""<|begin_of_text|><|start_header_id|>system<|end_header_id|>
-            You are a grader assessing relevance of a retrieved document to a
-            user question. If the document contains keywords related to the
+            You are {persona} assessing relevance of a retrieved document to
+            a user question. If the document contains keywords related to the
             user question, grade it as relevant. It does not need to be a
             stringent test. The goal is to filter out erroneous retrievals. \n
             Give a binary score 'yes' or 'no' score to indicate whether the
-            document is relevant to the question. \n
+            document is relevant to the question.\n
             Provide the binary score as a JSON with a single key 'score' and
-            no premable or explanation.
-             <|eot_id|><|start_header_id|>user<|end_header_id|>
+            no explanation.
             Here is the retrieved document: \n\n {document} \n\n
             Here is the user question: {question} \n
             <|eot_id|><|start_header_id|>assistant<|end_header_id|>
+
             """,
-            input_variables=["question", "document"],
+            input_variables=["persona", "question", "document"],
         )
         updated_retrieval_grader_prompt = PromptTemplate(template="""
-            You are a trusted friend and confidant, known for your wisdom and
-            insight. I'm sharing with you a document and a question that
+            You are {persona}. I'm sharing with you a document and a question that
             someone has asked.
             
             The document is: {document}
@@ -64,7 +63,7 @@ class PromptCreator:
         )
         rag_generate_prompt = PromptTemplate(
             template="""<|begin_of_text|><|start_header_id|>system<|end_header_id|>
-            You are an assistant for question-answering tasks. 
+            You are {persona}. 
             Use the following pieces of retrieved context to answer the
             question.
             Provide the response as a JSON with two keys: 'thoughts' which
@@ -76,11 +75,11 @@ class PromptCreator:
             Question: {question} 
             Context: {context} 
             Answer: <|eot_id|><|start_header_id|>assistant<|end_header_id|>""",
-            input_variables=["question", "document"],
+            input_variables=["persona", "question", "document"],
         )
         hallucination_grader_prompt = PromptTemplate(
             template=""" <|begin_of_text|><|start_header_id|>system<|end_header_id|>
-            You are a grader assessing whether an answer is grounded in and
+            You are {persona} assessing whether an answer is grounded in and
             supported by a set of facts. Give a binary 'yes' or 'no' score to
             indicate whether the answer is grounded in / supported by a set of
             facts. Provide the binary score as a JSON with a single key 'score'
@@ -92,11 +91,11 @@ class PromptCreator:
             \n ------- \n
             Here is the answer: {generation}
             <|eot_id|><|start_header_id|>assistant<|end_header_id|>""",
-            input_variables=["generation", "documents"],
+            input_variables=["persona", "generation", "documents"],
         )
         answer_grader_prompt = PromptTemplate(
             template="""<|begin_of_text|><|start_header_id|>system<|end_header_id|>
-            You are a grader assessing whether an answer is useful to resolve a
+            You are a {persona} assessing whether an answer is useful to resolve a
             question. Give a binary score 'yes' or 'no' to indicate whether the
             answer is useful to resolve a question. Provide the binary score as
             a JSON with a single key 'score' and no preamble or explanation.
@@ -107,12 +106,11 @@ class PromptCreator:
             \n ------- \n
             Here is the question: {question}
             <|eot_id|><|start_header_id|>assistant<|end_header_id|>""",
-            input_variables=["generation", "question"],
+            input_variables=["persona", "generation", "question"],
         )
         question_router_prompt = PromptTemplate(
             template="""<|begin_of_text|><|start_header_id|>system<|end_header_id|>
-            You are an expert at routing a user question to a vectorstore or
-            web search. Use the vectorstore for questions on belegarth. You do
+            You are {persona}. Use the vectorstore for questions on belegarth. You do
             not need to be stringent with the keywords in the question related
             to these topics. Otherwise, use web-search. Give a binary choice
             'web_search' or 'vectorstore' based on the question. Return the a
@@ -124,10 +122,7 @@ class PromptCreator:
         improve_question_prompt = PromptTemplate(
             template="""
             <|begin_of_text|><|start_header_id|>system<|end_header_id|>
-            You are an expert at understanding questions asked of you and
-            developing them into clearly stated questions, outlining every
-            expectation for a fully satisfying answer, and laying out which
-            sources will be helpful in creating that satisfying answer.
+            You are {persona}.
             Provide the response as a JSON with two keys: 'thoughts' which
             contains all steps taken to reason about the question, and
             'updated_question' which contains the full text of the original
@@ -136,7 +131,7 @@ class PromptCreator:
             Question to route: {question}
             <|eot_id|><|start_header_id|>assistant<|end_header_id|>
             """,
-            input_variables=["question"]
+            input_variables=["persona", "question"]
         )
         structure_question_prompt = PromptTemplate(
             template="""
@@ -161,8 +156,7 @@ class PromptCreator:
         text_relevance_prompt = PromptTemplate(
             template="""
             <|begin_of_text|><|start_header_id|>system<|end_header_id|>
-            You are an expert at predicting which sources of information will
-            be relevant to a subject, with perfectly calibrated predictive
+            You are {persona}, with perfectly calibrated predictive
             accuracy. Give a probability estimate that following information
             source will contain information that is directly relevant to the
             given query.
@@ -174,7 +168,7 @@ class PromptCreator:
             Source: {text}
             <|eot_id|><|start_header_id|>assistant<|end_header_id|>
             """,
-            input_variables = ["question", "text"],
+            input_variables = ["persona", "question", "text"],
         )
         self._available_prompts = {"retrieval_grader": retrieval_grader_prompt,
                     "new_retrieval_grader": updated_retrieval_grader_prompt,
@@ -184,7 +178,8 @@ class PromptCreator:
                     "answer_grader": answer_grader_prompt,
                     "question_router": question_router_prompt,
                     "improve_question": improve_question_prompt,
-                    "text_relevance": text_relevance_prompt}
+                    "text_relevance": text_relevance_prompt,
+                    "rate_note": answer_grader_prompt}
 
     def get_prompt(self, prompt_title):
         """
