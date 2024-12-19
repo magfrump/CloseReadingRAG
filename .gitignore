@@ -3,7 +3,8 @@
 
 ### Python ###
 
-*_kg.json
+# Indexed web sources
+data/*_kg.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
